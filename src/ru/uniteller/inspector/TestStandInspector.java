@@ -114,9 +114,9 @@ public class TestStandInspector extends LocalInspectionTool {
             }
         }
         if (!methodEntry.isEmpty()) {
-            StringBuffer buffer = new StringBuffer("");
+            StringBuilder buffer = new StringBuilder("");
             for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
-               buffer.append(entry.getValue().getPhpClass().getFQN()).append("::").append(entry.getValue().getMethod().getName()).append("\n");
+               buffer.append(entry.getValue().getPhpClass().getFQN()).append("::").append(entry.getValue().getMethod().getName()).append("<br>");
             }
             holder.registerProblem(phpClass.getFirstChild(), buffer.toString(), ProblemHighlightType.ERROR, new MethodCommandLocalQuickFix(phpClass));
         }

@@ -74,7 +74,10 @@ public class TestStandInspector extends LocalInspectionTool {
             LOG.info("Class: "+phpClass.getName()+".    \nINFO: isInterface: "+phpClass.isInterface()+", is Ancestor Subject: "+sc.isAncestorSubject(phpClass));
             return;
         }
-        
+        LOG.info("Interface: "+phpClass.getName()+" has commands:");
+        for (PhpClass phpClass1 :sc.getAllClassForSubject(phpClass)){
+            LOG.info(phpClass1.getFQN());
+        }
         sc.isAncestorSubject(phpClass);
     }
 

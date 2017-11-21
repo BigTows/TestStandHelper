@@ -4,9 +4,7 @@ import com.intellij.codeInsight.completion.PrefixMatcher;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.php.PhpIndex;
-import com.jetbrains.php.lang.psi.elements.ClassReference;
-import com.jetbrains.php.lang.psi.elements.PhpClass;
-import com.jetbrains.php.lang.psi.elements.PhpNamespace;
+import com.jetbrains.php.lang.psi.elements.*;
 import org.jetbrains.annotations.NotNull;
 import ru.uniteller.inspector.TestStandInspector;
 
@@ -20,6 +18,7 @@ public class SubjectCommand {
     private static final Logger LOG = Logger.getInstance(TestStandInspector.class);
     private static final String SUBJECT_INTERFACE_NAME = "SubjectInterface";
     private static final String COMMAND_INTERFACE_NAME = "CommandInterface";
+    private static final String LOCAL_TYPE_DOMAIN_INTERFACE = "\\TestSrv\\Lib\\Domain\\DomainInterface";
     private PhpIndex phpIndex;
 
     public SubjectCommand(PhpIndex phpIndex) {
@@ -44,10 +43,12 @@ public class SubjectCommand {
         String nameSpace = "\\TestSrv\\Subject\\" + subjectClass.getName().split("Interface")[0] + "\\Command\\";
         //TODO PrefixMatcher (*)Command
         for (String namePhpClass : phpIndex.getAllClassNames(PrefixMatcher.ALWAYS_TRUE)) {
-            Collection<PhpClass> col =  phpIndex.getClassesByFQN(nameSpace+namePhpClass);
-            int count =col.size();
-            if (count>0){
-                classes.add(col.iterator().next());
+            Collection<PhpClass> col = phpIndex.getClassesByFQN(nameSpace + namePhpClass);
+            int count = col.size();
+            if (count > 0) {
+                PhpClass phpClass = col.iterator().next();
+                if (isClass(phpClass) && isAncestorCommand(phpClass))
+                    classes.add(phpClass);
             }
         }
 
@@ -55,10 +56,29 @@ public class SubjectCommand {
     }
 
     /**
+     * Получение всех методов команды
+     *
+     * @param commandPhpClass Командный класс
+     * @return {@code List<Method>} Лист команд
+     * @see Method
+     * @see PhpClass
+     */
+    public List<Method> getMethodsByCommand(PhpClass commandPhpClass) {
+        List<Method> methodsCommand = new ArrayList<>();
+        for (Method method : commandPhpClass.getMethods()) {
+            if (isValidCommandMethod(method))
+                methodsCommand.add(method);
+        }
+        return methodsCommand;
+    }
+
+
+    /**
      * Является ли PHPClass предком SubjectInterface
      *
      * @param phpClass Класс PHP
      * @return {@code true} - если данный класс является предком SubjectInterface
+     * @see PhpClass
      * TODO UnitTest
      */
     public boolean isAncestorSubject(PhpClass phpClass) {
@@ -70,6 +90,7 @@ public class SubjectCommand {
      *
      * @param phpClass Класс PHP
      * @return {@code true} - если данный класс является предком CommandInterface
+     * @see PhpClass
      * TODO UnitTest
      */
     public boolean isAncestorCommand(PhpClass phpClass) {
@@ -96,5 +117,31 @@ public class SubjectCommand {
         return false;
     }
 
+
+    /**
+     * Является ли переданный класс, обычным(не абстрактным, не интерфейс и не трейт)
+     *
+     * @param phpClass Класс
+     * @return {@code true} Если класс является обычным
+     * @see PhpClass
+     */
+    private boolean isClass(PhpClass phpClass) {
+        return !phpClass.isInterface() && !phpClass.isAbstract() && !phpClass.isTrait();
+    }
+
+    /**
+     * Являели ли данный метод "Командным" (не абстрактный,публичный, не статичный,
+     * первый аргумент метода, должен быть \TestSrv\Lib\Domain\DomainInterface,
+     * TODO или наследоваться от него.
+     * )
+     *
+     * @param method Метод
+     * @return {@code true} если данный метод является "Командным"
+     * @see Method
+     */
+    private boolean isValidCommandMethod(Method method) {
+        Parameter parameters[] = method.getParameters();
+        return parameters.length != 0 && !method.isAbstract() && !method.isStatic() && method.getAccess().isPublic() && parameters[0].getLocalType().toString().equals(LOCAL_TYPE_DOMAIN_INTERFACE);
+    }
 
 }

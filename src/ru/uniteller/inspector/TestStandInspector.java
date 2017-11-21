@@ -16,6 +16,8 @@ import com.jetbrains.php.lang.psi.visitors.PhpElementVisitor;
 import org.jetbrains.annotations.NotNull;
 import ru.uniteller.SubjectCommand;
 
+import java.util.List;
+
 public class TestStandInspector extends LocalInspectionTool {
     private static final Logger LOG = Logger.getInstance(TestStandInspector.class);
 
@@ -74,10 +76,18 @@ public class TestStandInspector extends LocalInspectionTool {
             LOG.info("Class: "+phpClass.getName()+".    \nINFO: isInterface: "+phpClass.isInterface()+", is Ancestor Subject: "+sc.isAncestorSubject(phpClass));
             return;
         }
+
+        List<PhpClass> collectionCommand = sc.getAllClassForSubject(phpClass);
         LOG.info("Interface: "+phpClass.getName()+" has commands:");
-        for (PhpClass phpClass1 :sc.getAllClassForSubject(phpClass)){
+        for (PhpClass phpClass1 :collectionCommand){
             LOG.info(phpClass1.getFQN());
+            LOG.info("    With methods: ");
+            for (Method method: sc.getMethodsByCommand(phpClass1)){
+                LOG.info("      "+method.getFQN());
+            }
         }
+
+
         sc.isAncestorSubject(phpClass);
     }
 

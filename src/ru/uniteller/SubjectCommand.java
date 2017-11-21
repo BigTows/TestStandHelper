@@ -8,10 +8,7 @@ import com.jetbrains.php.lang.psi.elements.*;
 import org.jetbrains.annotations.NotNull;
 import ru.uniteller.inspector.TestStandInspector;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class SubjectCommand {
 
@@ -34,8 +31,19 @@ public class SubjectCommand {
 
     }
 
+    //TODO create Class (Collection)
+    public Map<String,PhpClassAndMethod> getSchema(PhpClass interfaceSubject){
+        Map<String,PhpClassAndMethod> schema = new HashMap<>();
+        for (PhpClass commandClass: getAllCommandClassForSubject(interfaceSubject)){
+            for (Method method: getMethodsByCommandClass(commandClass)){
+                schema.put(method.getName()+commandClass.getName().split("Command")[0],new PhpClassAndMethod(commandClass,method));
+            }
+        }
+        return schema;
+    }
 
-    public List<PhpClass> getAllClassForSubject(PhpClass subjectClass) {
+
+    public List<PhpClass> getAllCommandClassForSubject(PhpClass subjectClass) {
         if (!isAncestorSubject(subjectClass)) {
             return null;
         }
@@ -63,7 +71,7 @@ public class SubjectCommand {
      * @see Method
      * @see PhpClass
      */
-    public List<Method> getMethodsByCommand(PhpClass commandPhpClass) {
+    public List<Method> getMethodsByCommandClass(PhpClass commandPhpClass) {
         List<Method> methodsCommand = new ArrayList<>();
         for (Method method : commandPhpClass.getMethods()) {
             if (isValidCommandMethod(method))
@@ -143,5 +151,6 @@ public class SubjectCommand {
         Parameter parameters[] = method.getParameters();
         return parameters.length != 0 && !method.isAbstract() && !method.isStatic() && method.getAccess().isPublic() && parameters[0].getLocalType().toString().equals(LOCAL_TYPE_DOMAIN_INTERFACE);
     }
+
 
 }

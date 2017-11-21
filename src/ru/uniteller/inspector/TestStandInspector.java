@@ -1,22 +1,30 @@
 package ru.uniteller.inspector;
 
 import com.intellij.codeInspection.LocalInspectionTool;
+import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement;
+import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.PsiReference;
+import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocComment;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethod;
-import com.jetbrains.php.lang.documentation.phpdoc.psi.tags.PhpDocTag;
 import com.jetbrains.php.lang.psi.elements.Method;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
-import com.jetbrains.php.lang.psi.visitors.PhpElementVisitor;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import ru.uniteller.MethodCommandLocalQuickFix;
+import ru.uniteller.PhpClassAndMethod;
 import ru.uniteller.SubjectCommand;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TestStandInspector extends LocalInspectionTool {
     private static final Logger LOG = Logger.getInstance(TestStandInspector.class);
@@ -30,7 +38,7 @@ public class TestStandInspector extends LocalInspectionTool {
             @Override
             public void visitElement(PsiElement element) {
                 if (element instanceof PhpClass) {
-                    inspectClass((PhpClass) element);
+                    inspectClass((PhpClass) element, holder);
                 }
                 super.visitElement(element);
             }
@@ -69,27 +77,45 @@ public class TestStandInspector extends LocalInspectionTool {
         //return super.buildVisitor(holder, isOnTheFly);
     }
 
-    private void inspectClass(PhpClass phpClass) {
+    private void inspectClass(PhpClass phpClass, ProblemsHolder holder) {
         SubjectCommand sc = new SubjectCommand(phpClass.getProject());
         if (!phpClass.isInterface() || !sc.isAncestorSubject(phpClass)) {
             //TODO Remove this
-            LOG.info("Class: "+phpClass.getName()+".    \nINFO: isInterface: "+phpClass.isInterface()+", is Ancestor Subject: "+sc.isAncestorSubject(phpClass));
+            LOG.info("Class: " + phpClass.getName() + ".    \nINFO: isInterface: " + phpClass.isInterface() + ", is Ancestor Subject: " + sc.isAncestorSubject(phpClass));
             return;
         }
 
-        List<PhpClass> collectionCommand = sc.getAllClassForSubject(phpClass);
-        LOG.info("Interface: "+phpClass.getName()+" has commands:");
-        for (PhpClass phpClass1 :collectionCommand){
-            LOG.info(phpClass1.getFQN());
-            LOG.info("    With methods: ");
-            for (Method method: sc.getMethodsByCommand(phpClass1)){
-                LOG.info("      "+method.getFQN());
-            }
-        }
+       /* for (Map.Entry<String, PhpClassAndMethod> entry : sc.getSchema(phpClass).entrySet()){
+            LOG.info("\nCommand name: "+entry.getKey()+"\n"+
+            "Class: "+entry.getValue().getPhpClass().getName()+"\n"+
+            "MethodFull: "+entry.getValue().getMethod().getName());
+        }*/
+        checkAnnotation(holder, sc.getSchema(phpClass), phpClass);
 
 
-        sc.isAncestorSubject(phpClass);
     }
 
+
+    private void checkAnnotation(ProblemsHolder holder, Map<String, PhpClassAndMethod> methodEntry, PhpClass phpClass) {
+        PhpDocMethod[] methods = phpClass.getDocComment().getMethods();
+        if (methods!=null && methods.length==0) return;
+        for (PhpDocMethod docMethod : phpClass.getDocComment().getMethods()) {
+            PhpClassAndMethod classAndMethod = methodEntry.get(docMethod.getName());
+            if (classAndMethod == null) {
+                PsiElement firstChild = docMethod.getFirstChild();
+                holder.registerProblem(
+                        firstChild,
+                        "Undefined method",
+                        ProblemHighlightType.ERROR,
+                        new MethodCommandLocalQuickFix(docMethod)
+                );
+            }else{
+                methodEntry.values().remove(classAndMethod);
+            }
+        }
+        if (methodEntry.size()!=0){
+            holder.registerProblem(phpClass.getFirstChild().getChildren()[1],"Not all method's init",ProblemHighlightType.ERROR,new MethodCommandLocalQuickFix(phpClass));
+        }
+    }
 
 }

@@ -98,7 +98,7 @@ public class TestStandInspector extends LocalInspectionTool {
 
     private void checkAnnotation(ProblemsHolder holder, Map<String, PhpClassAndMethod> methodEntry, PhpClass phpClass) {
         PhpDocMethod[] methods = phpClass.getDocComment().getMethods();
-        if (methods!=null && methods.length==0) return;
+        if (methods != null && methods.length == 0) return;
         for (PhpDocMethod docMethod : phpClass.getDocComment().getMethods()) {
             PhpClassAndMethod classAndMethod = methodEntry.get(docMethod.getName());
             if (classAndMethod == null) {
@@ -109,12 +109,16 @@ public class TestStandInspector extends LocalInspectionTool {
                         ProblemHighlightType.ERROR,
                         new MethodCommandLocalQuickFix(docMethod)
                 );
-            }else{
+            } else {
                 methodEntry.values().remove(classAndMethod);
             }
         }
-        if (methodEntry.size()!=0){
-            holder.registerProblem(phpClass.getFirstChild().getChildren()[1],"Not all method's init",ProblemHighlightType.ERROR,new MethodCommandLocalQuickFix(phpClass));
+        if (!methodEntry.isEmpty()) {
+            StringBuffer buffer = new StringBuffer("");
+            for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
+               buffer.append(entry.getValue().getPhpClass().getFQN()).append("::").append(entry.getValue().getMethod().getName()).append("\n");
+            }
+            holder.registerProblem(phpClass.getFirstChild(), buffer.toString(), ProblemHighlightType.ERROR, new MethodCommandLocalQuickFix(phpClass));
         }
     }
 

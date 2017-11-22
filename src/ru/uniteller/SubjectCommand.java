@@ -28,22 +28,29 @@ public class SubjectCommand {
 
     public PhpClass getInterfaceByName(@NotNull String nameInterface) {
         return this.phpIndex.getInterfacesByName(nameInterface).size() > 0 ? this.phpIndex.getInterfacesByName(nameInterface).toArray(new PhpClass[1])[0] : null;
-
     }
 
-    //TODO create Class (Collection)
-    public Map<String,PhpClassAndMethod> getSchema(PhpClass interfaceSubject){
-        Map<String,PhpClassAndMethod> schema = new HashMap<>();
-        for (PhpClass commandClass: getAllCommandClassForSubject(interfaceSubject)){
-            for (Method method: getMethodsByCommandClass(commandClass)){
-                schema.put(method.getName()+commandClass.getName().split("Command")[0],new PhpClassAndMethod(commandClass,method));
+    /**
+     * Получаем список всех возможных методов Subject для команд
+     *
+     * @param interfaceSubject Интерфейс Субъекта
+     * @return Список команд субъекта (МетодСубъекта =  имяМетода+ИмяКоманды).
+     * Возвращаемая структура это Map ключем является методСубъекта, а значением является Класс
+     * {@code PhpClassAndMethod}
+     * @see PhpClassAndMethod
+     */
+    public Map<String, PhpClassAndMethod> getSchemaForSubject(PhpClass interfaceSubject) {
+        Map<String, PhpClassAndMethod> schema = new HashMap<>();
+        for (PhpClass commandClass : getAllCommandClassForSubject(interfaceSubject)) {
+            for (Method method : getMethodsByCommandClass(commandClass)) {
+                schema.put(method.getName() + commandClass.getName().split("Command")[0], new PhpClassAndMethod(commandClass, method));
             }
         }
         return schema;
     }
 
 
-    public List<PhpClass> getAllCommandClassForSubject(PhpClass subjectClass) {
+    private List<PhpClass> getAllCommandClassForSubject(PhpClass subjectClass) {
         if (!isAncestorSubject(subjectClass)) {
             return null;
         }
@@ -71,7 +78,7 @@ public class SubjectCommand {
      * @see Method
      * @see PhpClass
      */
-    public List<Method> getMethodsByCommandClass(PhpClass commandPhpClass) {
+    private List<Method> getMethodsByCommandClass(PhpClass commandPhpClass) {
         List<Method> methodsCommand = new ArrayList<>();
         for (Method method : commandPhpClass.getMethods()) {
             if (isValidCommandMethod(method))
@@ -109,15 +116,15 @@ public class SubjectCommand {
     private boolean isAncestor(PhpClass phpClass, String nameAncestor) {
         LOG.debug(phpClass.getName() + " is " + nameAncestor + "?");
 
-        if (phpClass.isInterface()) {
-            for (ClassReference extended : phpClass.getExtendsList().getReferenceElements()) {
-                LOG.debug("Founded extended Class: " + extended.getName());
+        if (!phpClass.isInterface()) {
+            for (PhpClass extended : phpClass.getSupers()) {
+                LOG.debug("  Founded extended Class: " + extended.getName());
                 if (extended.getName().equalsIgnoreCase(nameAncestor)) return true;
-                if (isAncestor((PhpClass) extended, nameAncestor)) return true;
+                if (isAncestor(extended, nameAncestor)) return true;
             }
         } else {
             for (PhpClass implemented : phpClass.getImplementedInterfaces()) {
-                LOG.debug("Founded implemented Class: " + implemented.getName());
+                LOG.debug("  Founded implemented Class: " + implemented.getName());
                 if (implemented.getName().equalsIgnoreCase(nameAncestor)) return true;
                 if (isAncestor(implemented, nameAncestor)) return true;
             }
@@ -149,7 +156,13 @@ public class SubjectCommand {
      */
     private boolean isValidCommandMethod(Method method) {
         Parameter parameters[] = method.getParameters();
-        return parameters.length != 0 && !method.isAbstract() && !method.isStatic() && method.getAccess().isPublic() && parameters[0].getLocalType().toString().equals(LOCAL_TYPE_DOMAIN_INTERFACE);
+        if (parameters.length == 0) return false;
+        /*String nameFirstParameter = parameters[0].getFirstPsiChild().getName();
+        PhpClass parameter = phpIndex.getClassByName(nameFirstParameter);
+        if (parameter!=null){
+            //todo Interface, is Domain?
+        }*/
+        return !method.isAbstract() && !method.isStatic() && method.getAccess().isPublic() && parameters[0].getLocalType().toString().equals(LOCAL_TYPE_DOMAIN_INTERFACE);
     }
 
 

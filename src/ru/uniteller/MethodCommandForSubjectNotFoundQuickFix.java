@@ -10,21 +10,21 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MethodCommandLocalQuickFix extends LocalQuickFixAndIntentionActionOnPsiElement {
+public class MethodCommandForSubjectNotFoundQuickFix extends LocalQuickFixAndIntentionActionOnPsiElement {
 
-    public MethodCommandLocalQuickFix(@Nullable PsiElement element) {
+    public MethodCommandForSubjectNotFoundQuickFix(@Nullable PsiElement element) {
         super(element);
     }
 
     @Override
     public void invoke(@NotNull Project project, @NotNull PsiFile file, @Nullable Editor editor, @NotNull PsiElement startElement, @NotNull PsiElement endElement) {
-        return;
+        startElement.getParent().delete();
     }
 
     @NotNull
     @Override
     public String getText() {
-        return "TODO";
+        return "Удалить";
     }
 
     @Nls

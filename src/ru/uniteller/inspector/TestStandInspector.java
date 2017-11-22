@@ -1,29 +1,19 @@
 package ru.uniteller.inspector;
 
 import com.intellij.codeInspection.LocalInspectionTool;
-import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiReference;
-import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocComment;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethod;
-import com.jetbrains.php.lang.psi.elements.Method;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import ru.uniteller.MethodCommandLocalQuickFix;
+import ru.uniteller.MethodCommandForSubjectNotFoundQuickFix;
 import ru.uniteller.PhpClassAndMethod;
 import ru.uniteller.SubjectCommand;
+import ru.uniteller.fix.InterfaceBadAnnotationQuickFix;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class TestStandInspector extends LocalInspectionTool {
@@ -79,46 +69,42 @@ public class TestStandInspector extends LocalInspectionTool {
 
     private void inspectClass(PhpClass phpClass, ProblemsHolder holder) {
         SubjectCommand sc = new SubjectCommand(phpClass.getProject());
-        if (!phpClass.isInterface() || !sc.isAncestorSubject(phpClass)) {
-            //TODO Remove this
-            LOG.info("Class: " + phpClass.getName() + ".    \nINFO: isInterface: " + phpClass.isInterface() + ", is Ancestor Subject: " + sc.isAncestorSubject(phpClass));
+        if (!phpClass.isInterface()) {
             return;
-        }
-
-       /* for (Map.Entry<String, PhpClassAndMethod> entry : sc.getSchema(phpClass).entrySet()){
-            LOG.info("\nCommand name: "+entry.getKey()+"\n"+
-            "Class: "+entry.getValue().getPhpClass().getName()+"\n"+
-            "MethodFull: "+entry.getValue().getMethod().getName());
-        }*/
-        checkAnnotation(holder, sc.getSchema(phpClass), phpClass);
-
-
+        } else if (!sc.isAncestorSubject(phpClass)) return;
+        checkAnnotation(holder, sc.getSchemaForSubject(phpClass), phpClass);
     }
 
 
     private void checkAnnotation(ProblemsHolder holder, Map<String, PhpClassAndMethod> methodEntry, PhpClass phpClass) {
+        if (phpClass.getDocComment() == null) return;
         PhpDocMethod[] methods = phpClass.getDocComment().getMethods();
-        if (methods != null && methods.length == 0) return;
+        if (methods.length == 0) return;
         for (PhpDocMethod docMethod : phpClass.getDocComment().getMethods()) {
             PhpClassAndMethod classAndMethod = methodEntry.get(docMethod.getName());
             if (classAndMethod == null) {
                 PsiElement firstChild = docMethod.getFirstChild();
                 holder.registerProblem(
-                        firstChild,
-                        "Undefined method",
+                        docMethod,
+                        "Неизвестный метод",
                         ProblemHighlightType.ERROR,
-                        new MethodCommandLocalQuickFix(docMethod)
+                        new MethodCommandForSubjectNotFoundQuickFix(docMethod)
                 );
             } else {
                 methodEntry.values().remove(classAndMethod);
             }
         }
         if (!methodEntry.isEmpty()) {
-            StringBuilder buffer = new StringBuilder("");
+            StringBuilder buffer = new StringBuilder("В аннотации не найдены методы: \n");
             for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
-               buffer.append(entry.getValue().getPhpClass().getFQN()).append("::").append(entry.getValue().getMethod().getName()).append("<br>");
+                buffer.append(entry.getValue().getPhpClass().getFQN()).
+                        append("::").
+                        append(entry.getValue().getMethod().getName()).
+                        append(", \n");
             }
-            holder.registerProblem(phpClass.getFirstChild(), buffer.toString(), ProblemHighlightType.ERROR, new MethodCommandLocalQuickFix(phpClass));
+            buffer.deleteCharAt(buffer.length() - 3);  //remove ","
+            if (phpClass.getNameIdentifier() != null)
+                holder.registerProblem(phpClass.getNameIdentifier(), buffer.toString(), ProblemHighlightType.ERROR, new InterfaceBadAnnotationQuickFix(phpClass, methodEntry));
         }
     }
 

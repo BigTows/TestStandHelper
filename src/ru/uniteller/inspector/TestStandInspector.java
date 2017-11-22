@@ -69,9 +69,8 @@ public class TestStandInspector extends LocalInspectionTool {
 
     private void inspectClass(PhpClass phpClass, ProblemsHolder holder) {
         SubjectCommand sc = new SubjectCommand(phpClass.getProject());
-        if (!phpClass.isInterface()) {
-            return;
-        } else if (!sc.isAncestorSubject(phpClass)) return;
+        if (!phpClass.isInterface()) return;
+        if (!sc.isAncestorSubject(phpClass)) return;
         checkAnnotation(holder, sc.getSchemaForSubject(phpClass), phpClass);
     }
 
@@ -83,9 +82,8 @@ public class TestStandInspector extends LocalInspectionTool {
         for (PhpDocMethod docMethod : phpClass.getDocComment().getMethods()) {
             PhpClassAndMethod classAndMethod = methodEntry.get(docMethod.getName());
             if (classAndMethod == null) {
-                PsiElement firstChild = docMethod.getFirstChild();
                 holder.registerProblem(
-                        docMethod,
+                        docMethod.getParent(),
                         "Неизвестный метод",
                         ProblemHighlightType.ERROR,
                         new MethodCommandForSubjectNotFoundQuickFix(docMethod)

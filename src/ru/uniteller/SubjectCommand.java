@@ -7,6 +7,7 @@ import com.jetbrains.php.PhpIndex;
 import com.jetbrains.php.lang.psi.elements.*;
 import org.jetbrains.annotations.NotNull;
 import ru.uniteller.inspector.TestStandInspector;
+import sun.rmi.runtime.Log;
 
 import java.util.*;
 
@@ -41,7 +42,9 @@ public class SubjectCommand {
      */
     public Map<String, PhpClassAndMethod> getSchemaForSubject(PhpClass interfaceSubject) {
         Map<String, PhpClassAndMethod> schema = new HashMap<>();
-        for (PhpClass commandClass : getAllCommandClassForSubject(interfaceSubject)) {
+        List<PhpClass> listCommands = getAllCommandClassForSubject(interfaceSubject);
+        if (listCommands == null) return schema;
+        for (PhpClass commandClass : listCommands) {
             for (Method method : getMethodsByCommandClass(commandClass)) {
                 schema.put(method.getName() + commandClass.getName().split("Command")[0], new PhpClassAndMethod(commandClass, method));
             }
@@ -155,14 +158,28 @@ public class SubjectCommand {
      * @see Method
      */
     private boolean isValidCommandMethod(Method method) {
+        return isValidSignatureMethod(method) && !method.isAbstract() && !method.isStatic() && method.getAccess().isPublic();
+
+    }
+
+
+    private boolean isValidSignatureMethod(Method method) {
+        LOG.info(method.getName() + " M");
         Parameter parameters[] = method.getParameters();
         if (parameters.length == 0) return false;
-        /*String nameFirstParameter = parameters[0].getFirstPsiChild().getName();
-        PhpClass parameter = phpIndex.getClassByName(nameFirstParameter);
-        if (parameter!=null){
-            //todo Interface, is Domain?
-        }*/
-        return !method.isAbstract() && !method.isStatic() && method.getAccess().isPublic() && parameters[0].getLocalType().toString().equals(LOCAL_TYPE_DOMAIN_INTERFACE);
+        String nameSpaceType = parameters[0].getDeclaredType().toString();
+        if (nameSpaceType.equals(LOCAL_TYPE_DOMAIN_INTERFACE))
+            return true;
+        Collection<PhpClass> parametersClass = phpIndex.getClassesByName(nameSpaceType);
+        Collection<PhpClass> parametersInterface = phpIndex.getInterfacesByFQN(nameSpaceType);
+        if (parametersClass.size() == 1) {
+            for (PhpClass phpClass : parametersClass)
+                return isAncestor(phpClass,"DomainInterface");
+        } else if (parametersInterface.size() == 1) {
+            for (PhpClass phpClass : parametersInterface)
+                return isAncestor(phpClass,"DomainInterface");
+        }
+        return false;
     }
 
 

@@ -3,7 +3,9 @@ package ru.uniteller;
 import com.intellij.codeInsight.completion.PrefixMatcher;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiFileFactory;
 import com.jetbrains.php.PhpIndex;
+import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.*;
 import org.jetbrains.annotations.NotNull;
 import ru.uniteller.inspector.TestStandInspector;
@@ -52,6 +54,17 @@ public class SubjectCommand {
         return schema;
     }
 
+
+    public List<String> getMethodDomain(){
+        List<String> methodList = new ArrayList<>();
+        //TODO Sub Interface
+        for (PhpClass phpClass:phpIndex.getInterfacesByFQN(LOCAL_TYPE_DOMAIN_INTERFACE)){
+            for (Method method: phpClass.getMethods()){
+                methodList.add(method.getName());
+            }
+        }
+        return methodList;
+    }
 
     private List<PhpClass> getAllCommandClassForSubject(PhpClass subjectClass) {
         if (!isAncestorSubject(subjectClass)) {
@@ -164,7 +177,6 @@ public class SubjectCommand {
 
 
     private boolean isValidSignatureMethod(Method method) {
-        LOG.info(method.getName() + " M");
         Parameter parameters[] = method.getParameters();
         if (parameters.length == 0) return false;
         String nameSpaceType = parameters[0].getDeclaredType().toString();

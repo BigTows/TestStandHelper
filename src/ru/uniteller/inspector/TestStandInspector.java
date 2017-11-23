@@ -14,6 +14,7 @@ import ru.uniteller.PhpClassAndMethod;
 import ru.uniteller.SubjectCommand;
 import ru.uniteller.fix.InterfaceBadAnnotationQuickFix;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class TestStandInspector extends LocalInspectionTool {
@@ -95,6 +96,7 @@ public class TestStandInspector extends LocalInspectionTool {
         if (!methodEntry.isEmpty()) {
             StringBuilder buffer = new StringBuilder("В аннотации не найдены методы: \n");
             for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
+                LOG.info(entry.getValue().toString());
                 buffer.append(entry.getValue().getPhpClass().getFQN()).
                         append("::").
                         append(entry.getValue().getMethod().getName()).

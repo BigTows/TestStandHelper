@@ -1,4 +1,4 @@
-package ru.uniteller.fix;
+package ru.uniteller.teststandhelper.fix;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement;
@@ -6,18 +6,14 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.SmartPointerManager;
-import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import com.intellij.psi.impl.source.tree.PsiWhiteSpaceImpl;
-import com.intellij.psi.tree.IElementType;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.impl.PhpDocMethodTagImpl;
-import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import ru.uniteller.PhpClassAndMethod;
+import ru.uniteller.teststandhelper.PhpClassAndMethod;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;

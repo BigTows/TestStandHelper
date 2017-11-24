@@ -1,4 +1,4 @@
-package ru.uniteller.inspector;
+package ru.uniteller.teststandhelper.inspector;
 
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.codeInspection.ProblemHighlightType;
@@ -9,12 +9,11 @@ import com.intellij.psi.PsiElementVisitor;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethod;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.jetbrains.annotations.NotNull;
-import ru.uniteller.MethodCommandForSubjectNotFoundQuickFix;
-import ru.uniteller.PhpClassAndMethod;
-import ru.uniteller.SubjectCommand;
-import ru.uniteller.fix.InterfaceBadAnnotationQuickFix;
+import ru.uniteller.teststandhelper.MethodCommandForSubjectNotFoundQuickFix;
+import ru.uniteller.teststandhelper.PhpClassAndMethod;
+import ru.uniteller.teststandhelper.SubjectCommand;
+import ru.uniteller.teststandhelper.fix.InterfaceBadAnnotationQuickFix;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class TestStandInspector extends LocalInspectionTool {

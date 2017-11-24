@@ -1,4 +1,4 @@
-package ru.uniteller.teststandhelper;
+package ru.uniteller.teststandhelper.util;
 
 import com.intellij.codeInsight.completion.PrefixMatcher;
 import com.intellij.openapi.diagnostic.Logger;
@@ -6,11 +6,12 @@ import com.intellij.openapi.project.Project;
 import com.jetbrains.php.PhpIndex;
 import com.jetbrains.php.lang.psi.elements.*;
 import org.jetbrains.annotations.NotNull;
+import ru.uniteller.teststandhelper.PhpClassAndMethod;
 import ru.uniteller.teststandhelper.inspector.TestStandInspector;
 
 import java.util.*;
 
-public class SubjectCommand {
+public class SubjectHelper {
 
     private static final Logger LOG = Logger.getInstance(TestStandInspector.class);
     private static final String SUBJECT_INTERFACE_NAME = "SubjectInterface";
@@ -18,11 +19,11 @@ public class SubjectCommand {
     private static final String LOCAL_TYPE_DOMAIN_INTERFACE = "\\TestSrv\\Lib\\Domain\\DomainInterface";
     private PhpIndex phpIndex;
 
-    public SubjectCommand(PhpIndex phpIndex) {
+    public SubjectHelper(PhpIndex phpIndex) {
         this.phpIndex = phpIndex;
     }
 
-    public SubjectCommand(Project project) {
+    public SubjectHelper(Project project) {
         this.phpIndex = PhpIndex.getInstance(project);
     }
 

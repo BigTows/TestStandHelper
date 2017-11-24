@@ -9,10 +9,10 @@ import com.intellij.psi.PsiElementVisitor;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethod;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.jetbrains.annotations.NotNull;
-import ru.uniteller.teststandhelper.MethodCommandForSubjectNotFoundQuickFix;
+import ru.uniteller.teststandhelper.inspector.fix.MethodCommandForSubjectNotFoundQuickFix;
 import ru.uniteller.teststandhelper.PhpClassAndMethod;
-import ru.uniteller.teststandhelper.SubjectCommand;
-import ru.uniteller.teststandhelper.fix.InterfaceBadAnnotationQuickFix;
+import ru.uniteller.teststandhelper.util.SubjectHelper;
+import ru.uniteller.teststandhelper.inspector.fix.InterfaceBadAnnotationQuickFix;
 
 import java.util.Map;
 
@@ -33,7 +33,7 @@ public class TestStandInspector extends LocalInspectionTool {
                 super.visitElement(element);
             }
         };
-        /*SubjectCommand helper = new SubjectCommand(holder.getProject());
+        /*SubjectHelper helper = new SubjectHelper(holder.getProject());
         PhpClass phpClass = PsiTreeUtil.getParentOfType(holder.getFile().getContext(), PhpClass.class);
 
         PsiFile file = holder.getFile();
@@ -68,7 +68,7 @@ public class TestStandInspector extends LocalInspectionTool {
     }
 
     private void inspectClass(PhpClass phpClass, ProblemsHolder holder) {
-        SubjectCommand sc = new SubjectCommand(phpClass.getProject());
+        SubjectHelper sc = new SubjectHelper(phpClass.getProject());
         if (!phpClass.isInterface()) return;
         if (!sc.isAncestorSubject(phpClass)) return;
         checkAnnotation(holder, sc.getSchemaForSubject(phpClass), phpClass);

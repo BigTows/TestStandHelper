@@ -1,4 +1,4 @@
-package ru.uniteller.teststandhelper.fix;
+package ru.uniteller.teststandhelper.inspector.fix;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement;

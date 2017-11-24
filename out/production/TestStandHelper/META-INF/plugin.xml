@@ -1,12 +1,11 @@
 <idea-plugin>
-  <id>ru.uniteller</id>
+  <id>ru.uniteller.teststandhelper</id>
   <name>TestStandHelper</name>
-  <version>1.0</version>
-  <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+  <version>1.2</version>
+  <vendor email="support@yourcompany.com" url="https://uniteller.ru">Uniteller</vendor>
 
   <description><![CDATA[
-      Enter short description for your plugin here.<br>
-      <em>most HTML tags may be used</em>
+      <img src="https://uniteller.ru/local/templates/index/css/../img/base/logo.sv">
     ]]></description>
 
   <change-notes><![CDATA[
@@ -32,7 +31,7 @@
                      enabledByDefault="true"
                      level="WARNING"
                      language="PHP"
-                     implementationClass="ru.uniteller.inspector.TestStandInspector"/>
+                     implementationClass="ru.uniteller.teststandhelper.inspector.TestStandInspector"/>
   </extensions>
 
   <actions>

@@ -76,10 +76,17 @@ public class TestStandInspector extends LocalInspectionTool {
 
 
     private void checkAnnotation(ProblemsHolder holder, Map<String, PhpClassAndMethod> methodEntry, PhpClass phpClass) {
-        if (phpClass.getDocComment() == null) return;
+        for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
+            LOG.info(entry.getKey()+":\n"+entry.getValue().getPhpClass().getName()+"::"+entry.getValue().getMethod().getName());
+        }
+
+        if (phpClass.getDocComment() == null) {
+            if (methodEntry.size() > 0)
+                highlithInterface(holder, methodEntry, phpClass);
+            return;
+        }
         PhpDocMethod[] methods = phpClass.getDocComment().getMethods();
-        if (methods.length == 0) return;
-        for (PhpDocMethod docMethod : phpClass.getDocComment().getMethods()) {
+        for (PhpDocMethod docMethod : methods) {
             PhpClassAndMethod classAndMethod = methodEntry.get(docMethod.getName());
             if (classAndMethod == null) {
                 holder.registerProblem(
@@ -93,18 +100,22 @@ public class TestStandInspector extends LocalInspectionTool {
             }
         }
         if (!methodEntry.isEmpty()) {
-            StringBuilder buffer = new StringBuilder("В аннотации не найдены методы: \n");
-            for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
-                LOG.info(entry.getValue().toString());
-                buffer.append(entry.getValue().getPhpClass().getFQN()).
-                        append("::").
-                        append(entry.getValue().getMethod().getName()).
-                        append(", \n");
-            }
-            buffer.deleteCharAt(buffer.length() - 3);  //remove ","
-            if (phpClass.getNameIdentifier() != null)
-                holder.registerProblem(phpClass.getNameIdentifier(), buffer.toString(), ProblemHighlightType.ERROR, new InterfaceBadAnnotationQuickFix(phpClass, methodEntry));
+            highlithInterface(holder, methodEntry, phpClass);
         }
+    }
+
+    private void highlithInterface(ProblemsHolder holder, Map<String, PhpClassAndMethod> methodEntry, PhpClass phpClass) {
+        StringBuilder buffer = new StringBuilder("В аннотации не найдены методы: \n");
+        for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
+            LOG.info(entry.getValue().toString());
+            buffer.append(entry.getValue().getPhpClass().getFQN()).
+                    append("::").
+                    append(entry.getValue().getMethod().getName()).
+                    append(", \n");
+        }
+        buffer.deleteCharAt(buffer.length() - 3);  //remove ","
+        if (phpClass.getNameIdentifier() != null)
+            holder.registerProblem(phpClass.getNameIdentifier(), buffer.toString(), ProblemHighlightType.ERROR, new InterfaceBadAnnotationQuickFix(phpClass, methodEntry));
     }
 
 }

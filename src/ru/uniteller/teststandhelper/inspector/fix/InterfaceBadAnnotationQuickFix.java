@@ -6,9 +6,15 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import com.intellij.psi.impl.source.tree.PsiWhiteSpaceImpl;
+import com.intellij.util.IncorrectOperationException;
+import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocComment;
+import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethodTag;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.impl.PhpDocMethodTagImpl;
+import com.jetbrains.php.lang.psi.PhpFile;
+import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -22,16 +28,11 @@ import static com.jetbrains.php.lang.psi.PhpPsiElementFactory.createFromText;
 
 public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionActionOnPsiElement {
     private Map<String, PhpClassAndMethod> missingMethod;
-
-
-    private final AtomicReference<PsiWhiteSpaceImpl> enterPsiElement = new AtomicReference<>();
-    private final AtomicReference<PsiElement> spacePsiElement = new AtomicReference<>();
-    private final AtomicReference<LeafPsiElement> leafPsiElement = new AtomicReference<>();
-
+    private String namePhpClass;
     public InterfaceBadAnnotationQuickFix(@NotNull PhpClass phpClass, Map<String, PhpClassAndMethod> methodMap) {
         super(phpClass);
+        namePhpClass = phpClass.getName();
         this.missingMethod = methodMap;
-        initialize(phpClass.getProject());
     }
 
     @Override
@@ -41,22 +42,19 @@ public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionAct
         while (!(startElement instanceof PhpClass)) {
             startElement = startElement.getParent();
         }
-        LOG.info(((PhpClass) startElement).getName());
-        if (phpClass.getDocComment() == null)
-            return;
-        if (phpClass.getDocComment().getMethods().length == 0) {
-            HintManager.getInstance().showErrorHint(editor, "Ops, nothing found");
-            return;
+        PhpDocComment phpDoc = phpClass.getDocComment();
+
+        if (phpDoc == null){
+            phpClass.getParent().addBefore(PhpPsiElementFactory.createFromText(phpClass.getProject(), PhpDocComment.class,"/**\n*/"),phpClass);
+            addMethodToPhpDoc(phpClass.getDocComment());
+        } else if (phpDoc.getMethods().length == 0) {
+            addMethodToPhpDoc(phpDoc);
+        } else {
+            addMethodToPhpDoc(phpDoc.getMethods()[phpDoc.getMethods().length-1]);
         }
-        addMethodToPhpDoc(phpClass.getDocComment().getMethods()[0]);
 
     }
 
-    private void initialize(Project project) {
-        this.enterPsiElement.set(createFromText(project, PsiWhiteSpaceImpl.class, ""));
-        this.spacePsiElement.set(createFromText(project, PsiElement.class," * "));
-        this.leafPsiElement.set(createFromText(project, LeafPsiElement.class, "*"));
-    }
 
     private PhpClass getPhpClassByStartElement(PsiElement element) {
         while (!(element instanceof PhpClass)) {
@@ -67,17 +65,35 @@ public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionAct
 
 
     private void addMethodToPhpDoc(PsiElement after) {
-        if (after == null) return;
+        LOG.info(after.toString());
         for (Map.Entry<String, PhpClassAndMethod> entry : missingMethod.entrySet()) {
-            PhpDocMethodTagImpl methodTag = createFromText(after.getProject(), PhpDocMethodTagImpl.class,
-                    "/** @method " + entry.getValue().getPhpClass().getFQN() + " " + entry.getKey() + entry.getValue().toString() + "*/");
-            assert methodTag != null;
-            after.add(getEnter());
-            after.add(getSpace());
-            after.add(methodTag);
+            PhpDocMethodTag methodTag = createFromText(after.getProject(), PhpDocMethodTagImpl.class,
+                    "/** @method " + namePhpClass + " " + entry.getKey() + entry.getValue().toString() + "*/");
+            if (methodTag != null)
+                this.addPhpDocMethod(after, methodTag);
         }
+        reformatJavaDoc(after);
     }
 
+    private void addPhpDocMethod(PsiElement after, @NotNull PhpDocMethodTag methodTag) {
+        PsiElement enter = createFromText(after.getProject(), PsiWhiteSpaceImpl.class, "");
+        PsiElement space = createFromText(after.getProject(), PsiElement.class, " * ");
+        PsiElement leafPsiElement = createFromText(after.getProject(), LeafPsiElement.class, "*");
+        assert enter != null && space != null && leafPsiElement != null;
+        after.addAfter(enter,after.getChildren()[0]);
+        after.addAfter(leafPsiElement,after.getChildren()[1]);
+        after.addAfter(space,after.getChildren()[2]);
+        after.addAfter(methodTag,after.getChildren()[3]);
+    }
+    private void reformatJavaDoc(PsiElement theElement) {
+        LOG.info("Formated");
+        CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(theElement.getProject());
+        try {
+            codeStyleManager.reformatText(theElement.getContainingFile(), 0, theElement.getContainingFile().getTextLength());
+        } catch (IncorrectOperationException e) {
+            LOG.info("Could not reformat javadoc since cannot find required elements", e);
+        }
+    }
     @NotNull
     @Override
     public String getText() {
@@ -91,15 +107,4 @@ public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionAct
         return "Добавить";
     }
 
-    private PsiElement getSpace() {
-        return spacePsiElement.get();
-    }
-
-    private PsiWhiteSpaceImpl getEnter() {
-        return enterPsiElement.get();
-    }
-
-    private LeafPsiElement getLeaf() {
-        return leafPsiElement.get();
-    }
 }

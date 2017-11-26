@@ -1,6 +1,5 @@
 package ru.uniteller.teststandhelper.inspector.fix;
 
-import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -12,9 +11,10 @@ import com.intellij.psi.impl.source.tree.PsiWhiteSpaceImpl;
 import com.intellij.util.IncorrectOperationException;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocComment;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethodTag;
+import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocType;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.impl.PhpDocMethodTagImpl;
-import com.jetbrains.php.lang.psi.PhpFile;
 import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
+import com.jetbrains.php.lang.psi.elements.Method;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -22,13 +22,13 @@ import org.jetbrains.annotations.Nullable;
 import ru.uniteller.teststandhelper.PhpClassAndMethod;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.jetbrains.php.lang.psi.PhpPsiElementFactory.createFromText;
 
 public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionActionOnPsiElement {
     private Map<String, PhpClassAndMethod> missingMethod;
     private String namePhpClass;
+
     public InterfaceBadAnnotationQuickFix(@NotNull PhpClass phpClass, Map<String, PhpClassAndMethod> methodMap) {
         super(phpClass);
         namePhpClass = phpClass.getName();
@@ -44,14 +44,15 @@ public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionAct
         }
         PhpDocComment phpDoc = phpClass.getDocComment();
 
-        if (phpDoc == null){
-            phpClass.getParent().addBefore(PhpPsiElementFactory.createFromText(phpClass.getProject(), PhpDocComment.class,"/**\n*/"),phpClass);
+        if (phpDoc == null) {
+            phpClass.getParent().addBefore(PhpPsiElementFactory.createFromText(phpClass.getProject(), PhpDocComment.class, "/**\n*/"), phpClass);
             addMethodToPhpDoc(phpClass.getDocComment());
         } else if (phpDoc.getMethods().length == 0) {
             addMethodToPhpDoc(phpDoc);
         } else {
-            addMethodToPhpDoc(phpDoc.getMethods()[phpDoc.getMethods().length-1]);
+            addMethodToPhpDoc(phpDoc.getMethods()[phpDoc.getMethods().length - 1]);
         }
+
 
     }
 
@@ -68,11 +69,26 @@ public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionAct
         LOG.info(after.toString());
         for (Map.Entry<String, PhpClassAndMethod> entry : missingMethod.entrySet()) {
             PhpDocMethodTag methodTag = createFromText(after.getProject(), PhpDocMethodTagImpl.class,
-                    "/** @method " + namePhpClass + " " + entry.getKey() + entry.getValue().toString() + "*/");
+                    "/** @method " + getReturnTypeFromMethod(entry.getValue().getMethod()) + " " + entry.getKey() + entry.getValue().toString() + "*/");
             if (methodTag != null)
                 this.addPhpDocMethod(after, methodTag);
         }
         reformatJavaDoc(after);
+    }
+
+    private String getReturnTypeFromMethod(Method method) {
+        if (method.getDocComment() == null){
+            return "$this";
+        }
+        if (method.getDocComment().getReturnTag()==null){
+            return "$this";
+        }
+        for (PsiElement element : method.getDocComment().getReturnTag().getChildren()){
+            if (element instanceof PhpDocType){
+                return ((PhpDocType) element).getName();
+            }
+        }
+        return "$this";
     }
 
     private void addPhpDocMethod(PsiElement after, @NotNull PhpDocMethodTag methodTag) {
@@ -80,11 +96,12 @@ public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionAct
         PsiElement space = createFromText(after.getProject(), PsiElement.class, " * ");
         PsiElement leafPsiElement = createFromText(after.getProject(), LeafPsiElement.class, "*");
         assert enter != null && space != null && leafPsiElement != null;
-        after.addAfter(enter,after.getChildren()[0]);
-        after.addAfter(leafPsiElement,after.getChildren()[1]);
-        after.addAfter(space,after.getChildren()[2]);
-        after.addAfter(methodTag,after.getChildren()[3]);
+        after.addAfter(enter, after.getChildren()[0]);
+        after.addAfter(leafPsiElement, after.getChildren()[1]);
+        after.addAfter(space, after.getChildren()[2]);
+        after.addAfter(methodTag, after.getChildren()[3]);
     }
+
     private void reformatJavaDoc(PsiElement theElement) {
         LOG.info("Formated");
         CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(theElement.getProject());
@@ -94,6 +111,7 @@ public class InterfaceBadAnnotationQuickFix extends LocalQuickFixAndIntentionAct
             LOG.info("Could not reformat javadoc since cannot find required elements", e);
         }
     }
+
     @NotNull
     @Override
     public String getText() {

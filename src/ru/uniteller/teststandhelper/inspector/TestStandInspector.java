@@ -7,12 +7,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethod;
+import com.jetbrains.php.lang.psi.elements.Parameter;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.jetbrains.annotations.NotNull;
-import ru.uniteller.teststandhelper.inspector.fix.MethodCommandForSubjectNotFoundQuickFix;
 import ru.uniteller.teststandhelper.PhpClassAndMethod;
-import ru.uniteller.teststandhelper.util.SubjectHelper;
 import ru.uniteller.teststandhelper.inspector.fix.InterfaceBadAnnotationQuickFix;
+import ru.uniteller.teststandhelper.inspector.fix.MethodCommandForSubjectNotFoundQuickFix;
+import ru.uniteller.teststandhelper.util.SubjectHelper;
 
 import java.util.Map;
 
@@ -77,7 +78,7 @@ public class TestStandInspector extends LocalInspectionTool {
 
     private void checkAnnotation(ProblemsHolder holder, Map<String, PhpClassAndMethod> methodEntry, PhpClass phpClass) {
         for (Map.Entry<String, PhpClassAndMethod> entry : methodEntry.entrySet()) {
-            LOG.info(entry.getKey()+":\n"+entry.getValue().getPhpClass().getName()+"::"+entry.getValue().getMethod().getName());
+            LOG.info(entry.getKey() + ":\n" + entry.getValue().getPhpClass().getName() + "::" + entry.getValue().getMethod().getName());
         }
 
         if (phpClass.getDocComment() == null) {
@@ -89,14 +90,12 @@ public class TestStandInspector extends LocalInspectionTool {
         for (PhpDocMethod docMethod : methods) {
             PhpClassAndMethod classAndMethod = methodEntry.get(docMethod.getName());
             if (classAndMethod == null) {
-                holder.registerProblem(
-                        docMethod.getParent(),
-                        "Неизвестный метод",
-                        ProblemHighlightType.ERROR,
-                        new MethodCommandForSubjectNotFoundQuickFix(docMethod)
-                );
+                initError(holder, docMethod);
             } else {
-                methodEntry.values().remove(classAndMethod);
+                if (!cmpParameter(docMethod.getParameters(), classAndMethod.getMethod().getParameters())) {
+                    initError(holder, docMethod);
+                } else
+                    methodEntry.values().remove(classAndMethod);
             }
         }
         if (!methodEntry.isEmpty()) {
@@ -116,6 +115,23 @@ public class TestStandInspector extends LocalInspectionTool {
         buffer.deleteCharAt(buffer.length() - 3);  //remove ","
         if (phpClass.getNameIdentifier() != null)
             holder.registerProblem(phpClass.getNameIdentifier(), buffer.toString(), ProblemHighlightType.ERROR, new InterfaceBadAnnotationQuickFix(phpClass, methodEntry));
+    }
+
+    private boolean cmpParameter(Parameter[] docParameters, Parameter[] methodParameter) {
+        if (docParameters.length+1 != methodParameter.length) return false;
+        for (int i = 1; i < docParameters.length; i++) {
+            if (docParameters[i].getDeclaredType() != methodParameter[i].getDeclaredType()) return false;
+        }
+        return true;
+    }
+
+    private void initError(ProblemsHolder holder, PhpDocMethod docMethod) {
+        holder.registerProblem(
+                docMethod.getParent(),
+                "Неизвестный метод",
+                ProblemHighlightType.ERROR,
+                new MethodCommandForSubjectNotFoundQuickFix(docMethod)
+        );
     }
 
 }

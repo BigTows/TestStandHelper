@@ -30,10 +30,10 @@ public class PhpClassAndMethod {
                     append(" $").
                     append(parameter[i].getName()).
                     append(", ");
-            if (i - 1 == parameter.length) {
-                signature.deleteCharAt(signature.length() - 1);
-                signature.deleteCharAt(signature.length() - 1);
-            }
+        }
+        if (signature.length()>2) {
+            signature.deleteCharAt(signature.length() - 1);
+            signature.deleteCharAt(signature.length() - 1);
         }
         return signature.append(")").toString();
     }

@@ -1,4 +1,6 @@
-package ru.uniteller.teststandhelper.reposyitory;
+package ru.uniteller.teststandhelper.repository;
+
+import com.intellij.openapi.project.Project;
 
 import java.util.List;
 
@@ -14,4 +16,6 @@ public interface Repository<T> {
      * Обновление данных репозитория
      */
     public void update();
+
+
 }

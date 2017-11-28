@@ -31,7 +31,7 @@
                      enabledByDefault="true"
                      level="WARNING"
                      language="PHP"
-                     implementationClass="ru.uniteller.teststandhelper.inspector.TestStandInspector"/>
+                     implementationClass="ru.uniteller.teststandhelper.inspector.InterfaceSubjectInspector"/>
   </extensions>
 
   <actions>

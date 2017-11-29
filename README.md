@@ -7,4 +7,4 @@
 PHPStrom plugin for Uniteller
 
 
->> TODO![alt text](https://uniteller.ru/local/templates/index/css/../img/base/logo.svg)
+>> TODO!https://uniteller.ru/local/templates/index/css/../img/base/logo.svg

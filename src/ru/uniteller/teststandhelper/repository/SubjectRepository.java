@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.jetbrains.php.PhpIndex;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import ru.uniteller.teststandhelper.entity.CommandSubject;
+import ru.uniteller.teststandhelper.entity.Subject;
 import ru.uniteller.teststandhelper.entity.SubjectEntity;
 import ru.uniteller.teststandhelper.exception.TestStandHelperException;
 import ru.uniteller.teststandhelper.util.ClassHelper;
@@ -15,8 +16,8 @@ import ru.uniteller.teststandhelper.util.LogHelper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-public class SubjectRepository extends AbstractRepository<SubjectEntity> {
+//TODO
+public class SubjectRepository extends AbstractRepository<Subject> {
     private LogHelper log = new LogHelper(getClass());
 
     public SubjectRepository(Project project) {
@@ -29,11 +30,11 @@ public class SubjectRepository extends AbstractRepository<SubjectEntity> {
     public void update() {
         this.remove();
         for (PhpClass phpClass : getAllSubject(getPhpIndex())) {
-            try {
-                this.add(new SubjectEntity(phpClass, this.getAllCommandForSubject(phpClass)));
+            /*try {
+                //this.add(new Subject(new SubjectEntity(phpClass), this.getAllCommandForSubject(phpClass)));
             } catch (TestStandHelperException e) {
                 this.log.e(e.getMessage());
-            }
+            }*/
         }
     }
 
@@ -57,7 +58,7 @@ public class SubjectRepository extends AbstractRepository<SubjectEntity> {
         for(PhpClass phpClassCommand: getPhpIndex().getClassesByFQN(phpClass.getFQN()+"\\Command\\")){
             Logger.getInstance(getClass()).info(phpClassCommand.getName()+" + ");
             if (ClassHelper.isCommandAncestor(phpClassCommand)){
-                commandSubjects.add(new CommandSubject(phpClassCommand));
+               // commandSubjects.add(new CommandSubject(phpClassCommand));
             }
         }
         return commandSubjects;

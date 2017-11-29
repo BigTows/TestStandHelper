@@ -1,21 +1,18 @@
 package ru.uniteller.teststandhelper.inspector;
 
 import com.intellij.codeInspection.LocalInspectionTool;
-import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocComment;
-import com.jetbrains.php.lang.documentation.phpdoc.psi.PhpDocMethod;
 import com.jetbrains.php.lang.documentation.phpdoc.psi.impl.PhpDocCommentImpl;
 import com.jetbrains.php.lang.psi.PhpPsiElementFactory;
-import com.jetbrains.php.lang.psi.elements.Parameter;
 import com.jetbrains.php.lang.psi.elements.PhpClass;
 import org.jetbrains.annotations.NotNull;
 import ru.uniteller.teststandhelper.entity.CommandSubject;
+import ru.uniteller.teststandhelper.entity.Subject;
 import ru.uniteller.teststandhelper.entity.SubjectEntity;
-import ru.uniteller.teststandhelper.inspector.fix.SubjectClassFix;
+import ru.uniteller.teststandhelper.exception.TestStandHelperException;
 import ru.uniteller.teststandhelper.repository.SubjectRepository;
 import ru.uniteller.teststandhelper.util.LogHelper;
 
@@ -31,7 +28,11 @@ public class InterfaceSubjectInspector extends LocalInspectionTool {
             @Override
             public void visitElement(PsiElement element) {
                 if (element instanceof PhpClass) {
-                    inspectClass((PhpClass) element, holder);
+                    try {
+                        inspectClass((PhpClass) element, holder);
+                    } catch (TestStandHelperException e) {
+                        e.printStackTrace();
+                    }
                 }
                 super.visitElement(element);
             }
@@ -39,18 +40,9 @@ public class InterfaceSubjectInspector extends LocalInspectionTool {
     }
 
 
-
-    private void inspectClass(PhpClass phpClass, ProblemsHolder holder) {
-
-
-        SubjectRepository subjectRepository = new SubjectRepository(phpClass.getProject());
-        for (SubjectEntity entity:subjectRepository.getAll()){
-            log.i(entity.getClassSubject().getName());
-            for (CommandSubject commandSubject:entity.getCommands()){
-                log.i("   "+commandSubject.getPhpClass().getName());
-            }
-        }
-
+    private void inspectClass(PhpClass phpClass, ProblemsHolder holder) throws TestStandHelperException {
+        SubjectEntity subjectEntity = new SubjectEntity(phpClass);
+        log.i("\n"+subjectEntity.toPhpDoc());
 
         /*holder.registerProblem(
                 phpClass.getFirstChild(),
@@ -64,8 +56,8 @@ public class InterfaceSubjectInspector extends LocalInspectionTool {
     private void initPhpDoc(PhpClass phpClass) {
         if (phpClass.getDocComment() == null) {
             PhpDocComment phpDocComment = PhpPsiElementFactory.createFromText(phpClass.getProject(), PhpDocCommentImpl.class, "/** @package " + phpClass.getName() + " */");
-            phpClass.getParent().getParent().addBefore(phpDocComment,phpClass.getParent());
-          //  phpClass.getParent().add(phpDocComment);
+            phpClass.getParent().getParent().addBefore(phpDocComment, phpClass.getParent());
+            //  phpClass.getParent().add(phpDocComment);
 
         }
     }
